@@ -1,97 +1,58 @@
 # PiNNCafé 品咖啡 官網（www.pinncafe.com）
 
-一般的靜態網站，不需要建置步驟。換豆、改設定只要編輯 JSON 檔，推到 GitHub，Cloudflare Pages 就會自動更新。
+靜態網頁 + Cloudflare Pages Functions + D1 資料庫。豆單和網站設定都在**後台**修改，不用改程式碼。
 
-## 檔案
+## 平常怎麼用：後台
 
-| 檔案 | 用途 | 平常會改嗎 |
-|---|---|---|
-| `beans.json` | 豆單：產地、風味、價格、是否售完 | **會**，換豆時改這裡 |
-| `settings.json` | 司康／門市／Email 顯示開關、LINE ID、Facebook 網址 | 偶爾 |
-| `index.html` | 頁面版型與文字（故事、標題等） | 改文案時才動 |
-| `main.js` | 讀取兩個 JSON 並畫出豆卡、QR code、LINE 訂購 | 不用改 |
-| `vendor/qrcode.js` | 產生 QR code 的程式庫（MIT 授權） | 不用改 |
+打開 **https://www.pinncafe.com/admin**，用你的 Google 帳號登入（Cloudflare Access，只有允許名單上的 email 能進）。
 
-## 換豆：編輯 `beans.json`
+**豆單**
+- **售完**：按「售完」，官網卡片標示「已售完」、訂購按鈕停用。
+- **補貨**：按「補貨上架」，恢復可訂購。
+- **下架／顯示**：暫時不放在官網（資料保留）。
+- **編輯**：產地、產區、英文小字、風味、介紹、處理法、海拔、焙度、規格、售價、卡片顏色、照片。售價空白會顯示「價格請洽 LINE」。
+- **照片**：在編輯視窗按「選擇照片」，會自動縮小到 1200px 再上傳。沒照片時卡片上方顯示等高線圖。iPhone 的 HEIC 照片請先轉 JPG（或在 iPhone 設定 → 相機 → 格式 選「最相容」）。
+- **順序**：用 ▲▼ 調整。首頁主視覺的等高線圖和產地列用**前三支**上架中的豆子。
+- **刪除**：在編輯視窗左下角，刪了無法復原；只是暫時不賣請用「售完」或「下架」。
 
-每支豆是一個區塊，依檔案中的順序顯示，編號 01、02… 會自動排。主視覺的等高線圖和下方的產地列，會用**前三支**豆子。
+**網站設定**：司康／門市／Email 區塊顯示開關、LINE 官方帳號 ID、Facebook 網址。
 
-```json
-{
-  "name": "衣索比亞",
-  "region": "耶加雪菲",
-  "regionEn": "Yirgacheffe · Gedeo Zone",
-  "notes": ["茉莉", "藍莓", "佛手柑"],
-  "process": "日曬",
-  "altitude": "2200m",
-  "roast": "淺焙",
-  "weight": "250g",
-  "price": 480,
-  "soldOut": false,
-  "show": true,
-  "color": "綠"
-}
-```
+改完官網約 15 秒內更新（重新整理即可看到）。
 
-| 欄位 | 說明 |
+## 檔案結構
+
+| 路徑 | 用途 |
 |---|---|
-| `name` | 產地（大字） |
-| `region` | 產區，接在產地後面，也會出現在 LINE 訂購訊息裡 |
-| `regionEn` | 卡片上的英文斜體小字 |
-| `notes` | 風味，幾個都可以 |
-| `process`／`altitude`／`roast` | 處理法／海拔／焙度 |
-| `weight` | 價格上方的小標，例如 `250g`、`半磅` |
-| `price` | 數字，例如 `480`，會顯示成「NT$ 480」；寫 `null` 會顯示「價格請洽 LINE」 |
-| `soldOut` | `true` 時標示「已售完」，訂購按鈕會停用 |
-| `show` | `false` 時暫時不顯示這支豆（資料保留） |
-| `color` | 卡片顏色：`綠`、`黃`、`紅`、`藍`、`紫`、`棕`，或色碼如 `#4A8B7F` |
+| `public/index.html` | 官網版型與文案（故事、標題、門市地址等文字改這裡） |
+| `public/main.js` | 前台：從 `/api/beans` 讀資料畫出豆卡、QR code、LINE 訂購 |
+| `public/admin/` | 後台頁面 |
+| `functions/api/beans.js` | 公開 API：上架中的豆子＋設定 |
+| `functions/api/img/[id].js` | 產品照片 |
+| `functions/api/admin/[[path]].js` | 後台 API（需登入） |
+| `functions/_lib/common.js` | 共用工具、Cloudflare Access JWT 驗證 |
+| `db/schema.sql`、`db/seed.sql` | 資料表、初始三支豆 |
+| `wrangler.toml` | Pages 設定：輸出目錄 `public`、D1 綁定、Access 變數 |
 
-**新增一支豆**：複製一整個 `{ … }` 區塊，貼在最後一支後面。兩個區塊之間要有逗號，最後一個區塊後面不能有逗號。
+## Cloudflare 設定（已完成，留作紀錄）
 
-**改完不確定格式對不對**：把內容貼到 https://jsonlint.com 檢查。格式錯誤時，網站的豆單區會顯示「豆單暫時無法載入」。
+- **Pages 專案** `pinncafe`：連 GitHub 自動部署。專案有 `wrangler.toml`，建置設定以此檔為準（輸出目錄 `public`）。
+- **D1 資料庫** `pinncafe-www`：`wrangler.toml` 的 `[[d1_databases]]` 綁定為 `DB`。照片也存在 D1（每張約 100–300 KB）。
+- **Access**：Zero Trust → Access → Applications 的「PiNNCafé 官網後台」，保護 `www.pinncafe.com/admin` 與 `www.pinncafe.com/api/admin`，只允許指定 email。
+  `wrangler.toml` 的 `CF_ACCESS_TEAM_DOMAIN`、`CF_ACCESS_AUD` 是這個 Application 的識別碼（不是密鑰）；後台 API 會再驗證一次登入憑證。**沒設定時後台 API 一律拒絕**。
+- **要讓別人也能進後台**：到 Zero Trust → Access → Applications →「PiNNCafé 官網後台」→ Policies，把對方 email 加進允許名單。
 
-## 顯示開關：編輯 `settings.json`
-
-```json
-{
-  "showScones": false,
-  "showStore": false,
-  "showEmail": false,
-  "lineId": "@483crsha",
-  "facebookUrl": "https://www.facebook.com/PiNNCafe"
-}
-```
-
-- `showScones`：司康上架時改 `true`，烘焙坊區塊、司康禮盒等會一起出現。
-- `showStore`：門市開幕時改 `true`，門市資訊、「來找我們」區塊會出現（地址等文字在 `index.html` 裡，記得先填好）。
-- `showEmail`：在「追蹤品咖啡」區塊顯示 Email。
-- `lineId`：LINE 官方帳號 ID。頁尾 QR code、LINE 訂購按鈕會一起換掉。專屬 ID `@pinncafe` 可以搜尋到之後，改成 `"@pinncafe"` 即可。
-- `facebookUrl`：Facebook 粉絲專頁網址，QR code 會自動重新產生。
-
-## LINE 訂購怎麼運作
-
-- **手機**：點「LINE 訂購」直接開啟官方帳號聊天，訂購訊息已填好。
-- **電腦**：跳出視窗，顯示該品項專屬的 QR code；用手機掃描即開啟聊天並帶入訊息。也可以按「複製訂購內容」貼到 LINE。
-
-## 本機預覽
-
-直接雙擊 `index.html` 會讀不到 JSON（瀏覽器的安全限制），豆單區會出現提示。請在這個資料夾開終端機執行：
+## 本機開發
 
 ```bash
-python3 -m http.server 8000
+npm i -g wrangler
+wrangler d1 execute pinncafe-www --local --file=db/schema.sql
+wrangler d1 execute pinncafe-www --local --file=db/seed.sql
+echo 'DEV_NO_AUTH="1"' > .dev.vars     # 本機跳過登入（.dev.vars 不會進 git）
+wrangler pages dev
 ```
 
-然後用瀏覽器打開 http://localhost:8000 。
-
-## 部署到 Cloudflare Pages
-
-1. 把這個資料夾推到 GitHub（例如新的 repo `mywu-cloud/pinncafe-www`）。
-2. Cloudflare → Workers & Pages → 建立 → Pages → 連接 GitHub，選這個 repo。
-3. 建置設定：Framework preset 選 **None**，Build command **留空**，Build output directory 填 **`/`**。
-4. 部署完成後，在專案的「Custom domains」加上 `www.pinncafe.com`（DNS 已在 Cloudflare，會自動設定）。
-
-之後只要推送到 GitHub，網站幾十秒內就會更新。
+打開 http://localhost:8788 （後台 http://localhost:8788/admin ）。
 
 ## 注意
 
-- 「烘焙筆記與新到貨」的訂閱表單目前**不會儲存 Email**，只會顯示感謝訊息。要真的收集名單，需要串接電子報服務（例如 Mailchimp）或 Google 表單。
+- 「烘焙筆記與新到貨」的訂閱表單目前**不會儲存 Email**，只顯示感謝訊息。

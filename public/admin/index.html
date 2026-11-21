@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>PiNNCafé 後台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;1,400&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="logo">PiNNCafé</span><span>後台</span></div>
+  <div class="who"><span id="me"></span><a href="/" target="_blank" rel="noopener">查看官網 ↗</a></div>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button role="tab" aria-selected="true" data-tab="beans">豆單</button>
+  <button role="tab" aria-selected="false" data-tab="settings">網站設定</button>
+</nav>
+
+<main>
+  <section id="tab-beans">
+    <div class="bar">
+      <p class="hint">按「售完」或「補貨上架」切換販售狀態，官網約 15 秒內更新。</p>
+      <button class="btn primary" id="add-bean">＋ 新增豆子</button>
+    </div>
+    <div id="bean-list" class="list"><p class="empty">載入中…</p></div>
+  </section>
+
+  <section id="tab-settings" hidden>
+    <form id="settings-form" class="panel">
+      <h2>顯示開關</h2>
+      <label class="switch-row"><input type="checkbox" name="showScones"><span>顯示司康／烘焙坊區塊</span></label>
+      <label class="switch-row"><input type="checkbox" name="showStore"><span>顯示門市資訊（地址文字在 index.html）</span></label>
+      <label class="switch-row"><input type="checkbox" name="showEmail"><span>顯示 Email</span></label>
+      <h2>聯絡方式</h2>
+      <label class="field"><span>LINE 官方帳號 ID</span><input name="lineId" placeholder="@pinncafe" required></label>
+      <label class="field"><span>Facebook 粉絲專頁網址</span><input name="facebookUrl" type="url" placeholder="https://www.facebook.com/PiNNCafe" required></label>
+      <div class="actions"><button class="btn primary" type="submit">儲存設定</button></div>
+    </form>
+  </section>
+</main>
+
+<dialog id="edit">
+  <form id="edit-form" method="dialog">
+    <header class="dlg-head"><h2 id="edit-title">編輯豆子</h2><button type="button" class="x" data-close aria-label="關閉">×</button></header>
+    <div class="dlg-body">
+      <div class="photo">
+        <div class="photo-box" id="photo-box"><span>尚無照片</span></div>
+        <div class="photo-btns">
+          <label class="btn">選擇照片<input type="file" id="photo-input" accept="image/*" hidden></label>
+          <button type="button" class="btn ghost" id="photo-remove" hidden>移除照片</button>
+          <p class="small">會自動縮小到 1200px 寬。沒有照片時，卡片上方顯示等高線圖。</p>
+        </div>
+      </div>
+      <div class="grid2">
+        <label class="field"><span>產地（大字）*</span><input name="name" required maxlength="40" placeholder="衣索比亞"></label>
+        <label class="field"><span>產區</span><input name="region" maxlength="40" placeholder="耶加雪菲"></label>
+      </div>
+      <label class="field"><span>英文小字</span><input name="regionEn" maxlength="80" placeholder="Yirgacheffe · Gedeo Zone"></label>
+      <label class="field"><span>風味（用逗號或頓號分開）</span><input name="notes" maxlength="200" placeholder="茉莉、藍莓、佛手柑"></label>
+      <label class="field"><span>介紹（可空白）</span><textarea name="description" rows="3" maxlength="2000" placeholder="莊園、批次、沖煮建議…"></textarea></label>
+      <div class="grid3">
+        <label class="field"><span>處理法</span><input name="process" maxlength="20" placeholder="日曬"></label>
+        <label class="field"><span>海拔</span><input name="altitude" maxlength="20" placeholder="2200m"></label>
+        <label class="field"><span>焙度</span><input name="roast" maxlength="20" placeholder="淺焙"></label>
+      </div>
+      <div class="grid3">
+        <label class="field"><span>規格</span><input name="weight" maxlength="20" placeholder="250g"></label>
+        <label class="field"><span>售價（NT$）</span><input name="price" type="number" min="0" step="1" inputmode="numeric" placeholder="空白＝洽 LINE"></label>
+        <label class="field"><span>卡片顏色</span>
+          <select name="color">
+            <option value="綠">綠</option><option value="黃">黃</option><option value="紅">紅</option>
+            <option value="藍">藍</option><option value="紫">紫</option><option value="棕">棕</option>
+          </select>
+        </label>
+      </div>
+      <div class="checks">
+        <label class="switch-row"><input type="checkbox" name="show"><span>上架顯示在官網</span></label>
+        <label class="switch-row"><input type="checkbox" name="soldOut"><span>已售完</span></label>
+      </div>
+    </div>
+    <footer class="dlg-foot">
+      <button type="button" class="btn danger" id="delete-bean">刪除</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn ghost" data-close>取消</button>
+      <button type="submit" class="btn primary" id="save-bean">儲存</button>
+    </footer>
+  </form>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<script src="admin.js"></script>
+</body>
+</html>

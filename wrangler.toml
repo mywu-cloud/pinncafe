@@ -1,0 +1,15 @@
+name = "pinncafe"
+compatibility_date = "2026-01-01"
+pages_build_output_dir = "public"
+
+# D1 資料庫：豆單、照片、網站設定
+[[d1_databases]]
+binding = "DB"
+database_name = "pinncafe-www"
+database_id = "9db75155-5c67-4a51-9089-0c60c0f985d5"
+
+# Cloudflare Access（Zero Trust →「PiNNCafé 官網後台」）。
+# 專案有 wrangler.toml 時 Pages 以此檔為設定來源，所以寫在這裡。這兩個值是識別碼，不是密鑰。
+[vars]
+CF_ACCESS_TEAM_DOMAIN = "tw-mywu.cloudflareaccess.com"
+CF_ACCESS_AUD = "0f8f1154090f0cedec872919974801536910d30f8436bef13c6401749fb42715"

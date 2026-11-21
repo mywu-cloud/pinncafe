@@ -1,9 +1,9 @@
-// PiNNCafé 品咖啡 — reads settings.json and beans.json and fills the page.
-// Edit those two JSON files to update the site; this script does not need changes.
+// PiNNCafé 品咖啡 — reads beans + settings from /api/beans (Cloudflare D1) and fills the page.
+// Products and settings are edited in the admin page at /admin; this script does not need changes.
 (function () {
   'use strict';
 
-  // Card colours by name used in beans.json ("color"): line colour on the card, line colour on the dark map strip.
+  // Card colours by name (bean "color" field): line colour on the card, line colour on the dark map strip.
   var COLORS = {
     '綠': { main: '#4A8B7F', light: '#5FA899' },
     '黃': { main: '#C9853A', light: '#D9A04A' },
@@ -90,6 +90,7 @@
       return '<span style="padding: 2px 12px; border: 1px solid ' + col.main + '">' + esc(n) + '</span>';
     }).join('');
     var spec = function (label, value, mono) {
+      if (!mono && !value) return '';
       return '<div style="display: flex; flex-direction: column"><span style="font-size: 12px; letter-spacing: 0.2em; color: #6B5F55">' + esc(label) + '</span>' +
         (mono ? '<span style="font-family: \'DM Mono\', \'Noto Serif TC\', ui-monospace, monospace; font-size: 14px; align-self: flex-start">' + esc(value) + '</span>'
               : '<span style="font-size: 17px">' + esc(value) + '</span>') + '</div>';
@@ -98,11 +99,18 @@
       ? '<span style="display: flex; align-items: center; justify-content: center; min-height: 48px; margin-top: 4px; border: 1px solid #C4B8A5; color: #6B5F55; font-size: 14px; letter-spacing: 0.2em">已售完</span>'
       : '<a href="' + esc(chatUrl()) + '" data-order="' + esc(item) + '" aria-label="以 LINE 訂購' + esc(bean.name) + '" style="display: flex; align-items: center; justify-content: center; min-height: 48px; margin-top: 4px; background: #1E1611; color: #F6F1E7; font-size: 14px; letter-spacing: 0.2em">LINE 訂購</a>';
     var badge = bean.soldOut ? '<span style="font-family: \'Noto Serif TC\', serif; font-size: 12px; letter-spacing: 0.2em; padding: 1px 10px; border: 1px solid #6B5F55; color: #4A3F37">已售完</span>' : '';
-    return '<article style="background: #F6F1E7; display: flex; flex-direction: column' + (bean.soldOut ? '; opacity: 0.72' : '') + '">' +
-      '<div style="background: #1E1611; height: 120px; overflow: hidden">' +
-        '<svg aria-hidden="true" viewBox="0 0 360 120" preserveAspectRatio="none" style="display: block; width: 100%; height: 100%" fill="none">' + lines +
-        '<circle cx="' + topo.dot[0] + '" cy="' + topo.dot[1] + '" r="3.5" fill="' + col.light + '"></circle></svg>' +
-      '</div>' +
+    var head = bean.image
+      ? '<div style="background: #1E1611; aspect-ratio: 4 / 3; overflow: hidden; border-bottom: 3px solid ' + col.main + '">' +
+          '<img src="' + esc(bean.image) + '" alt="' + esc(bean.name + ' ' + (bean.region || '')) + '" loading="lazy" decoding="async" style="display: block; width: 100%; height: 100%; object-fit: cover' + (bean.soldOut ? '; filter: grayscale(0.6)' : '') + '">' +
+        '</div>'
+      : '<div style="background: #1E1611; height: 120px; overflow: hidden">' +
+          '<svg aria-hidden="true" viewBox="0 0 360 120" preserveAspectRatio="none" style="display: block; width: 100%; height: 100%" fill="none">' + lines +
+          '<circle cx="' + topo.dot[0] + '" cy="' + topo.dot[1] + '" r="3.5" fill="' + col.light + '"></circle></svg>' +
+        '</div>';
+    var desc = bean.description
+      ? '<p style="margin: 0; font-size: 15px; line-height: 1.85; color: #4A3F37; white-space: pre-line">' + esc(bean.description) + '</p>'
+      : '';
+    return '<article style="background: #F6F1E7; display: flex; flex-direction: column' + (bean.soldOut ? '; opacity: 0.72' : '') + '">' + head +
       '<div style="padding: 32px 36px 36px; display: flex; flex-direction: column; gap: 16px; flex-grow: 1">' +
         '<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px"><span style="font-family: \'DM Mono\', ui-monospace, monospace; font-size: 12px; letter-spacing: 0.25em; color: #6B5F55">' + num + '</span>' + badge + '</div>' +
         '<div style="display: flex; flex-direction: column">' +
@@ -110,7 +118,7 @@
           '<span style="font-family: \'Cormorant Garamond\', \'Noto Serif TC\', serif; font-style: italic; font-size: 18px; color: #6B5F55">' + esc(bean.regionEn || bean.region) + '</span>' +
         '</div>' +
         '<div aria-hidden="true" style="height: 2px; background: ' + col.main + '"></div>' +
-        '<div style="display: flex; flex-wrap: wrap; gap: 8px; font-size: 13px; color: #4A3F37">' + notes + '</div>' +
+        '<div style="display: flex; flex-wrap: wrap; gap: 8px; font-size: 13px; color: #4A3F37">' + notes + '</div>' + desc +
         '<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 12px; margin-top: auto; padding-top: 20px; border-top: 1px solid #C4B8A5">' +
           spec('處理法', bean.process) + spec('海拔', bean.altitude) + spec('焙度', bean.roast) + spec(bean.weight || '售價', priceText(bean), true) +
         '</div>' + button +
@@ -218,20 +226,19 @@
   document.addEventListener('DOMContentLoaded', function () {
     bindOrdering();
     bindNewsletter();
-    loadJson('settings.json').then(function (s) {
-      Object.keys(s || {}).forEach(function (k) { settings[k] = s[k]; });
-    }).catch(function () { /* keep defaults */ }).then(function () {
+    var finish = function () {
       applyToggles();
       applySocial();
       document.querySelectorAll('a[data-order]').forEach(function (a) { a.href = chatUrl(); });
-      return loadJson('beans.json');
-    }).then(function (data) {
+    };
+    loadJson('/api/beans').then(function (data) {
+      Object.keys((data && data.settings) || {}).forEach(function (k) { settings[k] = data.settings[k]; });
+      finish();
       renderBeans((data && data.beans) || []);
     }).catch(function (err) {
+      finish();
       var st = document.getElementById('bean-status');
-      if (st) st.textContent = location.protocol === 'file:'
-        ? '豆單需要透過網站伺服器讀取（直接開啟檔案無法載入 beans.json）。請部署到 Cloudflare Pages，或在本機用伺服器預覽。'
-        : '豆單暫時無法載入，請稍後再試，或透過 LINE 詢問。';
+      if (st) st.textContent = '豆單暫時無法載入，請稍後再試，或透過 LINE 詢問。';
       console.error(err);
     });
   });
