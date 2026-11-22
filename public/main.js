@@ -72,17 +72,19 @@
     var fb = document.getElementById('qr-fb');
     var ln = document.getElementById('qr-line');
     if (fb) fb.innerHTML = qrSvg(settings.facebookUrl);
-    if (ln) {
+    var qrSrc = 'https://qr-official.line.me/gs/M_' + settings.lineId.replace(/^@/, '') + '_GW.png?oat_content=qr';
+    var targets = Array.prototype.slice.call(document.querySelectorAll('[data-line-qr]'));
+    if (ln) targets.push(ln);
+    targets.forEach(function (box) {
       // LINE 官方提供的 QR Code 圖片；圖片載入失敗時改用自產的 QR Code
       var img = document.createElement('img');
       img.alt = '掃描加入品咖啡 LINE 官方帳號';
-      img.width = 104; img.height = 104;
-      img.style.cssText = 'display: block; width: 104px; height: 104px';
-      img.onerror = function () { ln.innerHTML = qrSvg(chatUrl()); };
-      img.src = 'https://qr-official.line.me/gs/M_' + settings.lineId.replace(/^@/, '') + '_GW.png?oat_content=qr';
-      ln.innerHTML = '';
-      ln.appendChild(img);
-    }
+      img.style.cssText = 'display: block; width: 100%; height: 100%';
+      img.onerror = function () { box.innerHTML = qrSvg(chatUrl()); };
+      img.src = qrSrc;
+      box.innerHTML = '';
+      box.appendChild(img);
+    });
   }
 
   // ---------- bean cards ----------
@@ -226,17 +228,6 @@
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !modal.hidden) closeOrder(); });
   }
 
-  // ---------- newsletter ----------
-  function bindNewsletter() {
-    var form = document.getElementById('nl-form');
-    if (!form) return;
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      document.getElementById('nl-form-wrap').hidden = true;
-      document.getElementById('nl-thanks').hidden = false;
-    });
-  }
-
   function loadJson(url) {
     return fetch(url, { cache: 'no-cache' }).then(function (r) {
       if (!r.ok) throw new Error(url + ' ' + r.status);
@@ -246,7 +237,6 @@
 
   document.addEventListener('DOMContentLoaded', function () {
     bindOrdering();
-    bindNewsletter();
     var finish = function () {
       applyToggles();
       applySocial();
