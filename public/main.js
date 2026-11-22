@@ -47,8 +47,6 @@
     return '價格請洽 LINE';
   }
   function chatUrl() { return 'https://line.me/R/ti/p/' + settings.lineId; }
-  function orderMessage(item) { return '您好，我想訂購\n品項：' + item + '\n數量：\n收件資料：'; }
-  function orderUrl(item) { return 'https://line.me/R/oaMessage/' + settings.lineId + '/?' + encodeURIComponent(orderMessage(item)); }
   function qrSvg(text, cell) {
     var qr = qrcode(0, 'L');
     qr.addData(text);
@@ -175,10 +173,22 @@
     });
     var stat = document.getElementById('stat-origins');
     if (stat) stat.textContent = String(shown.length);
-    var shop = document.getElementById('shop-origins');
-    if (shop) {
-      var avail = shown.filter(function (b) { return !b.soldOut; }).map(function (b) { return b.name; });
-      shop.textContent = avail.length ? avail.join(' · ') : '目前豆子皆已售完，歡迎透過 LINE 詢問下一批。';
+    var shopList = document.getElementById('shop-list');
+    if (shopList) {
+      var forSale = shown.filter(function (b) { return !b.soldOut; });
+      shopList.innerHTML = forSale.length ? forSale.map(function (b, i) {
+        var c = colorOf(b, shown.indexOf(b)).light;
+        var priced = typeof b.price === 'number' || (typeof b.price === 'string' && b.price.trim());
+        return '<div style="display: flex; flex-direction: column; gap: 2px; padding-left: 18px; position: relative">' +
+          '<span aria-hidden="true" style="position: absolute; left: 0; top: 9px; width: 8px; height: 8px; border-radius: 50%; background: ' + c + '"></span>' +
+          '<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px">' +
+            '<span style="font-size: 16px; letter-spacing: 0.04em">' + esc(b.name) + '</span>' +
+            '<span style="flex: 0 0 auto; font-family: \'DM Mono\', \'Noto Serif TC\', ui-monospace, monospace; font-size: ' + (priced ? '15px' : '13px') + '; color: #EFE8DB; white-space: nowrap">' +
+              esc(priceText(b)) + (b.weight ? '<span style="color: #8A7A6A; font-size: 12px"> / ' + esc(b.weight) + '</span>' : '') + '</span>' +
+          '</div>' +
+          (b.region ? '<span style="font-size: 12px; letter-spacing: 0.04em; color: #8A7A6A">' + esc(b.region) + '</span>' : '') +
+        '</div>';
+      }).join('') : '<div style="font-size: 14px; color: #B8AC9C">目前豆子皆已售完，歡迎透過 LINE 詢問下一批。</div>';
     }
     return shown;
   }
@@ -188,8 +198,15 @@
   function openOrder(item) {
     currentItem = item;
     document.getElementById('order-item').textContent = item;
-    document.getElementById('order-qr').innerHTML = qrSvg(orderUrl(item));
-    document.getElementById('order-copied').textContent = '';
+    var box = document.getElementById('order-qr');
+    // LINE 官方提供的加好友 QR Code 圖片；載入失敗時改用自產的 QR Code
+    var img = document.createElement('img');
+    img.alt = '掃描加入品咖啡 LINE 官方帳號';
+    img.style.cssText = 'display: block; width: 100%; height: 100%';
+    img.onerror = function () { box.innerHTML = qrSvg(chatUrl()); };
+    img.src = 'https://qr-official.line.me/gs/M_' + settings.lineId.replace(/^@/, '') + '_GW.png?oat_content=qr';
+    box.innerHTML = '';
+    box.appendChild(img);
     modal.hidden = false;
     document.getElementById('order-close').focus();
   }
@@ -201,19 +218,12 @@
       if (!a) return;
       e.preventDefault();
       var item = a.getAttribute('data-order');
-      if (isMobile) { window.location.href = orderUrl(item); return; }
+      if (isMobile) { window.location.href = chatUrl(); return; }
       openOrder(item);
     });
     document.getElementById('order-close').addEventListener('click', closeOrder);
     modal.addEventListener('click', function (e) { if (e.target === modal.firstElementChild) closeOrder(); });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !modal.hidden) closeOrder(); });
-    document.getElementById('order-copy').addEventListener('click', function () {
-      var out = document.getElementById('order-copied');
-      var text = orderMessage(currentItem);
-      var ok = function () { out.textContent = '已複製，可貼到 LINE 聊天視窗送出。'; };
-      var fail = function () { out.textContent = '無法自動複製，請改用手機掃描。'; };
-      try { navigator.clipboard.writeText(text).then(ok, fail); } catch (err) { fail(); }
-    });
   }
 
   // ---------- newsletter ----------
