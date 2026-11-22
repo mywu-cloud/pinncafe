@@ -27,7 +27,7 @@
               'M0 74 Q60 56 100 68 Q132 80 160 50 L200 22 L240 50 Q268 72 284 64 Q320 54 360 42'], dot: [200, 22] }
   ];
 
-  var settings = { showScones: false, showStore: false, showEmail: false, lineId: '@483crsha', facebookUrl: 'https://www.facebook.com/PiNNCafe' };
+  var settings = { showScones: false, showStore: false, showEmail: false, lineId: '@483crsha', facebookUrl: 'https://www.facebook.com/pinncafe' };
   var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
   function esc(v) {
