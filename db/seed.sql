@@ -8,5 +8,5 @@ INSERT OR IGNORE INTO settings (key, value) VALUES
   ('showScones', 'false'),
   ('showStore', 'false'),
   ('showEmail', 'false'),
-  ('lineId', '"@483crsha"'),
+  ('lineId', '"@xat.0000179596.ezt"'),
   ('facebookUrl', '"https://www.facebook.com/PiNNCafe"');
