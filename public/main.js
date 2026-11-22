@@ -115,7 +115,8 @@
         '<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px"><span style="font-family: \'DM Mono\', ui-monospace, monospace; font-size: 12px; letter-spacing: 0.25em; color: #6B5F55">' + num + '</span>' + badge + '</div>' +
         '<div style="display: flex; flex-direction: column">' +
           '<h3 style="margin: 0; font-weight: 300; font-size: 34px; line-height: 1.3; letter-spacing: 0.06em">' + esc(bean.name) + '</h3>' +
-          '<span style="font-family: \'Cormorant Garamond\', \'Noto Serif TC\', serif; font-style: italic; font-size: 18px; color: #6B5F55">' + esc(bean.regionEn || bean.region) + '</span>' +
+          (bean.region ? '<span style="margin-top: 4px; font-size: 18px; letter-spacing: 0.08em; color: #4A3F37">產區 · ' + esc(bean.region) + '</span>' : '') +
+          (bean.regionEn ? '<span style="font-family: \'Cormorant Garamond\', \'Noto Serif TC\', serif; font-style: italic; font-size: 18px; color: #6B5F55">' + esc(bean.regionEn) + '</span>' : '') +
         '</div>' +
         '<div aria-hidden="true" style="height: 2px; background: ' + col.main + '"></div>' +
         '<div style="display: flex; flex-wrap: wrap; gap: 8px; font-size: 13px; color: #4A3F37">' + notes + '</div>' + desc +
