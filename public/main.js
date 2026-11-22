@@ -74,7 +74,17 @@
     var fb = document.getElementById('qr-fb');
     var ln = document.getElementById('qr-line');
     if (fb) fb.innerHTML = qrSvg(settings.facebookUrl);
-    if (ln) ln.innerHTML = qrSvg(chatUrl());
+    if (ln) {
+      // LINE 官方提供的 QR Code 圖片；圖片載入失敗時改用自產的 QR Code
+      var img = document.createElement('img');
+      img.alt = '掃描加入品咖啡 LINE 官方帳號';
+      img.width = 104; img.height = 104;
+      img.style.cssText = 'display: block; width: 104px; height: 104px';
+      img.onerror = function () { ln.innerHTML = qrSvg(chatUrl()); };
+      img.src = 'https://qr-official.line.me/gs/M_' + settings.lineId.replace(/^@/, '') + '_GW.png?oat_content=qr';
+      ln.innerHTML = '';
+      ln.appendChild(img);
+    }
   }
 
   // ---------- bean cards ----------
